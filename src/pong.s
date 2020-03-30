@@ -3,6 +3,7 @@
 
 ; Vertical length of each player's paddle.
 PADDLE_SIZE equ 5 ; cells
+SCREEN_WIDTH equ 80
 SCREEN_HEIGHT equ 25
 
 ; Entry function (because it's at the beginning)
@@ -19,6 +20,7 @@ start:
 
 	call handle_input
 	call update_paddles
+	call update_ball
 
 	; Wait for 166ms
 	mov ah, 0x86
@@ -151,10 +153,59 @@ update_paddles:
 	inc byte [RIGHT_PLAYER_POS]
 	jmp .after_right_down
 
+; Updates the ball's position based on BALL_DX and BALL_DY.
+; It does this by adding the value in those variables to its position BALL_X and BALL_Y.
+; Additionally this function performs collision checks with the top and bottom wall, as well
+; as with each paddle.
+;
+; Clobbers: ah
+update_ball:
+	cmp byte [BALL_Y], 0
+	je .flip_dy
+	cmp byte [BALL_Y], (SCREEN_HEIGHT - 1)
+	je .flip_dy
+.after_flip_dy:
+	mov ah, [BALL_DX]
+	add [BALL_X], ah
+	mov ah, [BALL_DY]
+	add [BALL_Y], ah
+	cmp byte [BALL_X], 1
+	je .check_left_paddle
+	cmp byte [BALL_X], (SCREEN_WIDTH - 2)
+	je .check_right_paddle
+.end:
+	ret
+.flip_dy:
+	neg byte [BALL_DY]
+	jmp .after_flip_dy
+.check_left_paddle:
+	mov ah, [LEFT_PLAYER_POS]
+	cmp [BALL_Y], ah
+	jl .end
+	mov ah, [LEFT_PLAYER_POS]
+	add ah, PADDLE_SIZE
+	cmp [BALL_Y], ah
+	jg .end
+	neg byte [BALL_DX]
+	ret
+.check_right_paddle:
+	mov ah, [LEFT_PLAYER_POS]
+	cmp [BALL_Y], ah
+	jl .end
+	mov ah, [RIGHT_PLAYER_POS]
+	add ah, PADDLE_SIZE
+	cmp [BALL_Y], ah
+	jg .end
+	neg byte [BALL_DX]
+	ret
+
 LEFT_PLAYER_POS:  db 0
 RIGHT_PLAYER_POS: db 6
+
 BALL_X: db 40
 BALL_Y: db 12
+BALL_DY: db 1
+BALL_DX: db 1
 
 ; Each bit represents the state of a key.
 ; 0bxxxx_xxxx
