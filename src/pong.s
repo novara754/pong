@@ -180,21 +180,21 @@ update_ball:
 	jmp .after_flip_dy
 .check_left_paddle:
 	mov ah, [LEFT_PLAYER_POS]
-	cmp [BALL_Y], ah
+	cmp ah, [BALL_Y]
 	jl .end
 	mov ah, [LEFT_PLAYER_POS]
 	add ah, PADDLE_SIZE
-	cmp [BALL_Y], ah
+	cmp ah, [BALL_Y]
 	jg .end
 	neg byte [BALL_DX]
 	ret
 .check_right_paddle:
 	mov ah, [LEFT_PLAYER_POS]
-	cmp [BALL_Y], ah
+	cmp ah, [BALL_Y]
 	jl .end
 	mov ah, [RIGHT_PLAYER_POS]
 	add ah, PADDLE_SIZE
-	cmp [BALL_Y], ah
+	cmp ah, [BALL_Y]
 	jg .end
 	neg byte [BALL_DX]
 	ret
