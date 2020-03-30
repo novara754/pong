@@ -57,7 +57,7 @@ RIGHT_PLAYER_POS: db 6
 BALL_X: db 40
 BALL_Y: db 12
 
-%include "functions.s"
+%include "io.s"
 
 times 510-($-$$) db 0
 dw 0xAA55
