@@ -8,6 +8,12 @@ SCREEN_HEIGHT equ 25
 
 ; Entry function (because it's at the beginning)
 start:
+	; Hide cursor
+	mov ah, 0x01
+	mov cx, 0x2607
+	int 0x10
+
+.loop:
 	call clear_screen
 
 	mov ch, [LEFT_PLAYER_POS]
@@ -21,6 +27,7 @@ start:
 	call handle_input
 	call update_paddles
 	call update_ball
+	call check_goal
 
 	; Wait for 166ms
 	mov ah, 0x86
@@ -30,7 +37,7 @@ start:
 
 	; cli
 	; hlt
-	jmp start
+	jmp .loop
 
 ; Draw each of the player's paddles, starting at the row
 ; specified by CH, then moves down PADDLE_SIZE cells to draw
@@ -180,32 +187,49 @@ update_ball:
 	jmp .after_flip_dy
 .check_left_paddle:
 	mov ah, [LEFT_PLAYER_POS]
-	cmp ah, [BALL_Y]
+	cmp [BALL_Y], ah
 	jl .end
 	mov ah, [LEFT_PLAYER_POS]
 	add ah, PADDLE_SIZE
-	cmp ah, [BALL_Y]
+	cmp [BALL_Y], ah
 	jg .end
 	neg byte [BALL_DX]
 	ret
 .check_right_paddle:
-	mov ah, [LEFT_PLAYER_POS]
-	cmp ah, [BALL_Y]
+	mov ah, [RIGHT_PLAYER_POS]
+	cmp [BALL_Y], ah
 	jl .end
 	mov ah, [RIGHT_PLAYER_POS]
 	add ah, PADDLE_SIZE
-	cmp ah, [BALL_Y]
+	cmp [BALL_Y], ah
 	jg .end
 	neg byte [BALL_DX]
 	ret
 
-LEFT_PLAYER_POS:  db 0
-RIGHT_PLAYER_POS: db 6
+; Check if the ball is in either players goal, and update their scores respectively.
+; Also reset the ball to the middle if a goal was made.
+;
+; Clobbers: none
+check_goal:
+	cmp byte [BALL_X], 0
+	je .reset_ball
+	cmp byte [BALL_X], (SCREEN_WIDTH - 1)
+	je .reset_ball
+	ret
+.reset_ball:
+	mov byte [BALL_X], (SCREEN_WIDTH / 2)
+	mov byte [BALL_Y], (SCREEN_HEIGHT / 2)
+	neg byte [BALL_DX]
+	neg byte [BALL_DY]
+	ret
+
+LEFT_PLAYER_POS:  db ((SCREEN_HEIGHT - PADDLE_SIZE) / 2)
+RIGHT_PLAYER_POS: db ((SCREEN_HEIGHT - PADDLE_SIZE) / 2)
 
 BALL_X: db 40
 BALL_Y: db 12
 BALL_DY: db 1
-BALL_DX: db 1
+BALL_DX: db -1
 
 ; Each bit represents the state of a key.
 ; 0bxxxx_xxxx
